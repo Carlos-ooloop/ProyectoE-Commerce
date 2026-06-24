@@ -1,0 +1,23 @@
+from sqlalchemy import Column, Integer,String,Boolean,DateTime,JSON,Float,ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from db.data import Base
+from datetime import datetime
+
+
+class Product(Base):
+    __tablename__ = "products"
+    
+    id = mapped_column(Integer,primary_key=True,index=True)
+    name : Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    description: Mapped[str] = mapped_column(String,nullable=False)
+    brand : Mapped[str] = mapped_column(String, nullable=True)
+    category_id : Mapped[int] = mapped_column(Integer,ForeignKey("cotegories.id"), nullable=False)
+    base_price : Mapped[float] = mapped_column(Float, nullable=False)
+    unit : Mapped[str] = mapped_column(String,nullable=False)
+    characteristics = mapped_column(JSON,nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at  = mapped_column(DateTime,default= datetime.utcnow())
+    updated_at = mapped_column(DateTime, default=datetime.utcnow(), onupdate=datetime.utcnow())
+    
+    category = relationship("Category", back_populates="products")
+    inventory = relationship("Inventory", uselist= False, back_populates="product")
