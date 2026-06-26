@@ -7,6 +7,8 @@ from models.category_model import Category
 from models.inventory_model import Inventory
 from datetime import datetime
 from schemas.categories import CategoryCreate, CategoryResponse,CategoryUpdate
+from app.core.AuditService import create_auditlog
+from app.enums.audit_types import AuditAction, AuditEntity
 
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
@@ -19,6 +21,14 @@ async def create_category(new_category:CategoryCreate, db:Session = Depends(get_
     category = Category(name = new_category.name,
                         parent_id = new_category.parent_id)
     db.add(category)
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.CATEGORY,
+                    entity_id=category.id,
+                    action=AuditAction.CATEGORY_CREATED,
+                    user_id= category.id,
+                    status_before="NONE",
+                    status_after="CREATED"
+                    )  
     db.commit()
     db.refresh(category)
     return category
@@ -51,5 +61,13 @@ async def delete_category(id:int, db:Session = Depends(get_db)):
     if products:
         raise HTTPException(status_code=400,detail="CATEGORY CONTAIN PRODUCTS")
     db.delete(category)
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.CATEGORY,
+                    entity_id=category.id,
+                    action=AuditAction.CATEGORY_ELIMINATED,
+                    user_id= category.id,
+                    status_before="IN_DB",
+                    status_after="ELIMINATED"
+                    )  
     db.commit()
     return (f"CATEGORY: {category.name}, DELETED SUCCESSFULLY ")

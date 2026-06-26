@@ -5,7 +5,8 @@ from schemas.users import UserCreate, UserResponse,UserUpdate
 from jose import JWTError, jwt
 from fastapi import APIRouter, HTTPException,status,Depends
 from sqlalchemy.orm import Session
-
+from app.core.AuditService import create_auditlog
+from app.enums.audit_types import AuditAction,AuditEntity
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -23,6 +24,15 @@ async def register(user:UserCreate, db:Session = Depends(get_db)):
                     password = user.password,
                     email = user.email)
     db.add(new_user)
+    db.flush()
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.USER,
+                    entity_id=new_user.id,
+                    action=AuditAction.USER_CREATED,
+                    user_id= new_user.id,
+                    status_before="NONE",
+                    status_after="REGISTERED"
+                    )   
     db.commit()
     db.refresh(new_user)
     return new_user
@@ -66,6 +76,14 @@ async def delete_user(id:int, db:Session = Depends(get_db)):
     if not user:
         exception_not_found()
     db.delete(user)
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.USER,
+                    entity_id=user.id,
+                    action=AuditAction.USER_ELIMINATED,
+                    user_id= user.id,
+                    status_before="IN_DB",
+                    status_after="ELIMINATED"
+                    )   
     db.commit()
 
     return (f"USER {user.username} DELETED SUCCESSFULLY ")    

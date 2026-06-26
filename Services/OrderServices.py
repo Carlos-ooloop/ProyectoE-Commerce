@@ -7,6 +7,8 @@ from models.product_model import Product
 from models.inventory_model import Inventory
 from models.user_model import User
 from app.enums.order_status import OrderStatus
+from app.core.AuditService import create_auditlog
+from app.enums.audit_types import AuditEntity, AuditAction
 
 ALLOWED_TRANSITIONS = {OrderStatus.PENDING_PAYMENT : {OrderStatus.PAID,OrderStatus.CANCELLED},
                        OrderStatus.PAID : {OrderStatus.SHIPPED},
@@ -15,10 +17,20 @@ ALLOWED_TRANSITIONS = {OrderStatus.PENDING_PAYMENT : {OrderStatus.PAID,OrderStat
                        }
 
 def change_order_status(db:Session, order:Order, new_status:OrderStatus):
+    old_status = order.status
     allowed = ALLOWED_TRANSITIONS[order.status]
     if new_status not in allowed:
         raise HTTPException(status_code=400, detail=f"CANNOT CHANGE FROM {order.status} TO {new_status}")
     order.status = new_status
+    create_auditlog(
+                    db=db,
+                    entity_type=AuditEntity.ORDER,
+                    entity_id= order.id,
+                    action=AuditAction.ORDER_STATUS_CHANGED,
+                    user_id=order.user_id,
+                    status_before=old_status,
+                    status_after=new_status
+                    )
     db.commit()
     db.refresh(order)
     return order
@@ -30,6 +42,14 @@ def create_order_service(db:Session, order_data : OrderCreate, user:User):
     order = Order(user_id = user.id,status="PENDING", total_amount = 0)
     db.add(order)
     db.flush()
+
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.ORDER,
+                    entity_id= order.id,
+                    action=AuditAction.ORDER_CREATED,
+                    user_id= user.id,
+                    status_after= order.status
+                    )
     
     total = 0
     order_items = []

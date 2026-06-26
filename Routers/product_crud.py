@@ -7,6 +7,8 @@ from models.category_model import Category
 from models.inventory_model import Inventory
 from schemas.product import ProductCreate,ProductResponse,ProductUpdate
 from datetime import datetime
+from app.core.AuditService import create_auditlog
+from app.enums.audit_types import AuditAction,AuditEntity
 
 
 allowed_fields_in_products = {
@@ -52,6 +54,14 @@ async def add_product(new_product : ProductCreate, db:Session = Depends(get_db))
     
     inventory = Inventory(product_id = product.id, quantity = 0)
     db.add(inventory)
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.PRODUCT,
+                    entity_id=product.id,
+                    action=AuditAction.PRODUCT_CREATED,
+                    user_id= product.id,
+                    status_before="NONE",
+                    status_after="CREATED"
+                    )   
     db.commit()
     db.refresh(product)
     
@@ -87,6 +97,14 @@ async def delete_product(id:int, db:Session = Depends(get_db)):
     if not existing_product:
         exception_not_found()
     existing_product.deleted_at = datetime.utcnow()
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.PRODUCT,
+                    entity_id=existing_product.id,
+                    action=AuditAction.PRODUCT_ELIMINATED,
+                    user_id= existing_product.id,
+                    status_before="IN_DB",
+                    status_after="DELETED"
+                    )  
     db.commit()
     db.refresh(existing_product)
     return (f"PRODUCT : {existing_product.name}, DELETED SUCCESSFULLY")

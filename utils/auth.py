@@ -9,6 +9,8 @@ from db.data import get_db
 from sqlalchemy.orm import Session
 from schemas.refresh_token import RefreshTokenRequest
 from schemas.users import UserResponse
+from app.core.AuditService import create_auditlog
+from app.enums.audit_types import AuditAction, AuditEntity
 
 router = APIRouter()
 ALGORITHM = "HS256"
@@ -51,6 +53,14 @@ async def login(form:OAuth2PasswordRequestForm = Depends(),db:Session = Depends(
        exception_not_found()
        
     if not verify_password(form.password,user.password):
+        create_auditlog(db=db,
+                        entity_type=AuditEntity.AUTH,
+                        entity_id=user.id,
+                        action=AuditAction.LOGIN_FAILED,
+                        user_id= user.id,
+                        status_after="USER_NOT_AUTENTIFIED",
+                        metadata={"MOTIVE":"PASSWORD ERROR"}
+                        )   
         password_error()
         
     access_token = create_acces_token({"sub":user.username,"role":user.role})  
@@ -66,14 +76,21 @@ async def auth_user(token:str = Depends(oauth), db:Session = Depends(get_db)):
         raise HTTPException(status_code=401,detail= "TO GET ACCESS TO THIS RESOURCES YOU MUST BE AUTENTIFIED")
     try:
         username = jwt.decode(token, SECRET,algorithms=ALGORITHM).get("sub")
-        if username == None:
+        if username == None: 
             raise HTTPException(status_code=401, detail="THIS CREDENTIALS HAS NO VALUE")
+             
     except JWTError:
             raise HTTPException(status_code=401, detail="THIS CREDENTIALS HAS NO VALUE")
     user = db.query(User).filter(User.username == username).first()
     if not user:
         exception_not_found()
-        
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.AUTH,
+                    entity_id=user.id,
+                    action=AuditAction.LOGIN_SUCCESS,
+                    user_id= user.id,
+                    status_after="USER_AUTENTIFIED"
+                    )    
     return user    
 
 @router.get("/me", response_model= UserResponse)
@@ -97,6 +114,14 @@ async def make_admin(id:int ,user:User = Depends(admin_required),db:Session = De
     if current_user.role == "admin":
         raise HTTPException(status_code=401, detail="THIS USER IS ALREADY AN ADMIN")
     current_user.role = "admin"
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.ADMIN,
+                    entity_id=user.id,
+                    action=AuditAction.ADMIN_PROMOTED,
+                    user_id= current_user.id,
+                    status_before="USER",
+                    status_after="ADMIN"
+                    )   
     db.commit()
     db.refresh(current_user)
     return (f"NOW {current_user.username} IS ADMIN , PROMOTED BY: {user.username}")
@@ -111,6 +136,14 @@ async def remove_admin(id:int, user:User = Depends(admin_required), db:Session =
     if current_user.role != "admin":
         raise HTTPException(status_code=401, detail="THIS USER IS NOT AN ADMIN") 
     current_user.role = "Customer"
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.ADMIN,
+                    entity_id=user.id,
+                    action=AuditAction.ADMIN_REMOVED,
+                    user_id= current_user.id,
+                    status_before="ADMIN",
+                    status_after="USER"
+                    )   
     db.commit()
     db.refresh(current_user)
     return (f"NOW {current_user.username} IS NO LONGER AN ADMIN , REMOVED BY: {user.username}")

@@ -9,6 +9,8 @@ from app.enums.payment_status import PaymentStatus
 import random
 import time 
 from models.inventory_model import Inventory
+from app.core.AuditService import create_auditlog
+from app.enums.audit_types import AuditAction, AuditEntity
 
 def fake_payment_provider(payment)->str:
     time.sleep(0.5)
@@ -23,6 +25,15 @@ def handle_success(db, payment,order):
     payment.status = PaymentStatus.SUCCESS
     
     change_order_status(db=db, order=order,new_status=OrderStatus.PAID)
+    create_auditlog(
+                    db=db,
+                    entity_type=AuditEntity.PAYMENT,
+                    entity_id=payment.id,
+                    action=AuditAction.PAYMENT_SUCCESS,
+                    status_before=PaymentStatus.PENDING,
+                    status_after=PaymentStatus.SUCCESS,
+                    metadata={"order_id":order.id}
+                    )
     
     db.add(payment)
     db.commit()
@@ -39,6 +50,13 @@ def handle_failed(db,payment,order):
         inventory.quantity -= item.quantity
     change_order_status(db=db,order=order,new_status=OrderStatus.CANCELLED)
     db.add(payment)
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.PAYMENT,
+                    entity_id=payment.id,
+                    action=AuditAction.PAYMENT_FAILED,
+                    status_before=PaymentStatus.PENDING,
+                    status_after=PaymentStatus.FAILED,
+                    )
     db.commit()
     db.refresh(payment)
     return payment        
@@ -61,6 +79,13 @@ def process_payment(db:Session, order_id:int,client_money:float, user:User):
                       amount = order.total_amount,
                       status = PaymentStatus.PENDING,
                       )
+    create_auditlog(db=db,
+                    entity_type=AuditEntity.PAYMENT,
+                    entity_id=payment.id,
+                    action=AuditAction.PAYMENT_CREATED,
+                    user_id= user.id,
+                    status_after=PaymentStatus.PENDING
+                    )
     db.add(payment)
     db.flush()
     result = fake_payment_provider(payment=payment)
