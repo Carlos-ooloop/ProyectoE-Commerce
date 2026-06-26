@@ -11,7 +11,7 @@ class Product(Base):
     name : Mapped[str] = mapped_column(String, nullable=False, index=True)
     description: Mapped[str] = mapped_column(String,nullable=False)
     brand : Mapped[str] = mapped_column(String, nullable=True)
-    category_id : Mapped[int] = mapped_column(Integer,ForeignKey("cotegories.id"), nullable=False)
+    category_id : Mapped[int] = mapped_column(Integer,ForeignKey("categories.id"), nullable=False)
     base_price : Mapped[float] = mapped_column(Float, nullable=False)
     unit : Mapped[str] = mapped_column(String,nullable=False)
     characteristics = mapped_column(JSON,nullable=True)
