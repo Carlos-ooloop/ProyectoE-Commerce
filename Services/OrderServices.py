@@ -37,7 +37,7 @@ def create_order_service(db:Session, order_data : OrderCreate, user:User):
         inventory.quantity -= item.quantity
         total += product.base_price * item.quantity
     order.total_amount = total
-    order.status = "PAID"
+    order.status = "PENDING_PAYMENT"
     try :
         db.commit()
         db.refresh(order)

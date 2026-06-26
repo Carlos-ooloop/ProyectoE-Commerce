@@ -10,7 +10,7 @@ class Order(Base):
     __tablename__ = "orders"
     id  =  mapped_column(Integer,primary_key=True)
     created_at = mapped_column(DateTime)
-    status = mapped_column(String, default="PENDING")
+    status = mapped_column(String, default="PENDING_PAYMENT")
     total_amount = mapped_column(Float)
     user_id = mapped_column (Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="orders")
