@@ -10,4 +10,4 @@ class User(Base):
     role : Mapped[str] = mapped_column(String(10),default= "Customer")
     email : Mapped[str] = mapped_column(String(50),unique=True)
     password: Mapped[str] = mapped_column(String(250))
-    
+    orders = relationship("Order", back_populates="users")
