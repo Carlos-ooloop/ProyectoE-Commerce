@@ -6,6 +6,23 @@ from schemas.orders import OrderCreate
 from models.product_model import Product
 from models.inventory_model import Inventory
 from models.user_model import User
+from app.enums.order_status import OrderStatus
+
+ALLOWED_TRANSITIONS = {OrderStatus.PENDING_PAYMENT : {OrderStatus.PAID,OrderStatus.CANCELLED},
+                       OrderStatus.PAID : {OrderStatus.SHIPPED},
+                       OrderStatus.DELIVERED:set(),
+                       OrderStatus.CANCELLED:set()
+                       }
+
+def change_order_status(db:Session, order:Order, new_status:OrderStatus):
+    allowed = ALLOWED_TRANSITIONS[order.status]
+    if new_status not in allowed:
+        raise HTTPException(status_code=400, detail=f"CANNOT CHANGE FROM {order.status} TO {new_status}")
+    order.status = new_status
+    db.commit()
+    db.refresh(order)
+    return order
+
 
 
 def create_order_service(db:Session, order_data : OrderCreate, user:User):
@@ -37,7 +54,7 @@ def create_order_service(db:Session, order_data : OrderCreate, user:User):
         inventory.quantity -= item.quantity
         total += product.base_price * item.quantity
     order.total_amount = total
-    order.status = "PENDING_PAYMENT"
+    order.status = OrderStatus.PENDING_PAYMENT
     try :
         db.commit()
         db.refresh(order)

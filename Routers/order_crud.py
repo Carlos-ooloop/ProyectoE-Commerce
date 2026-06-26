@@ -16,4 +16,16 @@ router = APIRouter(prefix="/orders", tags=["Orders"], dependencies=[Depends(auth
 @router.post("/")
 async def create_order(order_data:OrderCreate, db:Session = Depends(get_db), current_user:User = Depends(auth_user)):
    return create_order_service(db,order_data,current_user)
- 
+
+@router.get("/")
+async def get_orders(id:int, db:Session = Depends(get_db)):
+   orders = db.query(Order).all()
+   return orders
+
+
+@router.get("/{id}")
+async def get_order(id:int, db:Session = Depends(get_db)):
+   order = db.query(Order).filter(Order.id == id).first()
+   if not order:
+      raise HTTPException(status_code=404, detail="ORDER NOT FOUND")
+   return order

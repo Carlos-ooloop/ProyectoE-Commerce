@@ -5,6 +5,7 @@ from models.product_model import Product
 from models.inventory_model import Inventory
 from models.category_model import Category
 from models.user_model import User
+from models.payment_model import Payment
 from fastapi import APIRouter, HTTPException, Depends
 from schemas.orders import OrderCreate, OrderItemCreate
 from schemas.payment import PaymentCreate
@@ -20,4 +21,10 @@ router = APIRouter(prefix="/payment", tags=["Payments"],dependencies=[Depends(au
 
 @router.post("/")
 async def make_payment(payment_data:PaymentCreate,db:Session = Depends(get_db), current_user = Depends(auth_user)):
-    return process_payment(db,payment_data.order_id,current_user)
+    return process_payment(db,payment_data.order_id,payment_data.client_money,current_user)
+@router.get("/{id}")
+async def get_payment(id:int, db:Session = Depends(get_db)):
+    payment = db.query(Payment).filter(Payment.id == id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="PAYMENT NOT FOUND")
+    return payment
