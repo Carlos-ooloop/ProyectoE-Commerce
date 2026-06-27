@@ -9,6 +9,7 @@ from datetime import datetime
 from schemas.categories import CategoryCreate, CategoryResponse,CategoryUpdate
 from app.core.AuditService import create_auditlog
 from app.enums.audit_types import AuditAction, AuditEntity
+from app.core.logging import category_logger
 
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
@@ -28,7 +29,8 @@ async def create_category(new_category:CategoryCreate, db:Session = Depends(get_
                     user_id= category.id,
                     status_before="NONE",
                     status_after="CREATED"
-                    )  
+                    )
+    category_logger.info(f"CATEGORY:{category.name}, WAS CREATED SUCCESSFULLY  ")  
     db.commit()
     db.refresh(category)
     return category
@@ -49,6 +51,7 @@ async def act_category(id:int, act_category:CategoryUpdate,db:Session = Depends(
     update = act_category.model_dump(exclude_unset=True)
     for key,value in update.items():
         setattr(existing_category,key,value)
+    category_logger.info(f"CATEGORY:{existing_category.name}, MODIFIED ")    
     db.commit()
     db.refresh(existing_category)   
 
@@ -69,5 +72,6 @@ async def delete_category(id:int, db:Session = Depends(get_db)):
                     status_before="IN_DB",
                     status_after="ELIMINATED"
                     )  
+    category_logger.info(f"CATEGORY: {category.name}, DELETED")
     db.commit()
     return (f"CATEGORY: {category.name}, DELETED SUCCESSFULLY ")

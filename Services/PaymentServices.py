@@ -11,6 +11,8 @@ import time
 from models.inventory_model import Inventory
 from app.core.AuditService import create_auditlog
 from app.enums.audit_types import AuditAction, AuditEntity
+from app.core.logging import payment_logger
+
 
 def fake_payment_provider(payment)->str:
     time.sleep(0.5)
@@ -90,6 +92,8 @@ def process_payment(db:Session, order_id:int,client_money:float, user:User):
     db.flush()
     result = fake_payment_provider(payment=payment)
     if result == "SUCCESS":
+        payment_logger.info(f"PAYMENT OF USER`S ORDER: {user.username}, SUCCESSFULLY MADE")
         return handle_success(db=db, payment=payment, order=order)
+    payment.logger(f"FAILED TO MAKE THE PAYMENT OF USER`S ORDER: {user.username}")    
     return handle_failed(db=db,payment=payment,order=order)
     

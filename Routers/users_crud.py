@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException,status,Depends
 from sqlalchemy.orm import Session
 from app.core.AuditService import create_auditlog
 from app.enums.audit_types import AuditAction,AuditEntity
+from app.core.logging import user_logger
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -32,7 +33,8 @@ async def register(user:UserCreate, db:Session = Depends(get_db)):
                     user_id= new_user.id,
                     status_before="NONE",
                     status_after="REGISTERED"
-                    )   
+                    ) 
+    user_logger.info(f"USER : {new_user.username}, SUCCESFULLY REGISTERED")
     db.commit()
     db.refresh(new_user)
     return new_user
@@ -71,7 +73,7 @@ async def user_update(id:int, current_user:UserUpdate, db:Session = Depends(get_
 
 
 @router.delete("/{id}", dependencies=[Depends(admin_required)])
-async def delete_user(id:int, db:Session = Depends(get_db)):
+async def delete_user(id:int, db:Session = Depends(get_db), admin_user:User = Depends(admin_required)):
     user = db.query(User).filter(User.id == id).first()
     if not user:
         exception_not_found()
@@ -83,7 +85,8 @@ async def delete_user(id:int, db:Session = Depends(get_db)):
                     user_id= user.id,
                     status_before="IN_DB",
                     status_after="ELIMINATED"
-                    )   
+                    )
+    user_logger.info(f"USER: {user.username}, SUCCESFULLY DELETED BY: {admin_user.username}")   
     db.commit()
 
     return (f"USER {user.username} DELETED SUCCESSFULLY ")    

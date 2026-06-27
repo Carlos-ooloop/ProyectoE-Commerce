@@ -8,6 +8,8 @@ from models.inventory_model import Inventory
 from schemas.product import ProductCreate,ProductResponse,ProductUpdate
 from schemas.inventory import InventoryAdjust
 from datetime import datetime
+from app.core.logging import inventory_logger
+from models.user_model import User
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -21,7 +23,7 @@ async def get_inventory(product_id:int ,db:Session=Depends(get_db)):
 
 
 @router.patch("/{product_id}/adjust", dependencies=[Depends(admin_required)])
-async def act_inventory(product_id:int,inventory:InventoryAdjust, db:Session=Depends(get_db)):
+async def act_inventory(product_id:int,inventory:InventoryAdjust, db:Session=Depends(get_db), user:User = Depends(admin_required)):
     existing_inventory = db.query(Inventory).filter(Inventory.product_id == product_id).first()
     if not existing_inventory:
         raise HTTPException(status_code=404,detail="INVENTORY NOT FOUND")
@@ -29,6 +31,7 @@ async def act_inventory(product_id:int,inventory:InventoryAdjust, db:Session=Dep
     if new_quantity < 0:
         raise HTTPException(status_code=400, detail="INSUFICIENT STOCK")
     existing_inventory.quantity = new_quantity
+    inventory_logger.info(f"INVENTORY MODIFIED BY: {user.username} ")
     db.commit()
     db.refresh(existing_inventory)
     return existing_inventory      

@@ -9,6 +9,7 @@ from models.user_model import User
 from app.enums.order_status import OrderStatus
 from app.core.AuditService import create_auditlog
 from app.enums.audit_types import AuditEntity, AuditAction
+from app.core.logging import order_logger
 
 ALLOWED_TRANSITIONS = {OrderStatus.PENDING_PAYMENT : {OrderStatus.PAID,OrderStatus.CANCELLED},
                        OrderStatus.PAID : {OrderStatus.SHIPPED},
@@ -81,4 +82,5 @@ def create_order_service(db:Session, order_data : OrderCreate, user:User):
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500,detail="ERROR CREATING ORDER")
+    order_logger.info(f"ORDER CREATED BY: {user.username}")
     return order        

@@ -11,6 +11,7 @@ from schemas.refresh_token import RefreshTokenRequest
 from schemas.users import UserResponse
 from app.core.AuditService import create_auditlog
 from app.enums.audit_types import AuditAction, AuditEntity
+from app.core.logging import auth_logger
 
 router = APIRouter()
 ALGORITHM = "HS256"
@@ -80,6 +81,7 @@ async def auth_user(token:str = Depends(oauth), db:Session = Depends(get_db)):
             raise HTTPException(status_code=401, detail="THIS CREDENTIALS HAS NO VALUE")
              
     except JWTError:
+            auth_logger.warning(f"USER:{username}, FAILED TO AUTH")     
             raise HTTPException(status_code=401, detail="THIS CREDENTIALS HAS NO VALUE")
     user = db.query(User).filter(User.username == username).first()
     if not user:
@@ -91,6 +93,7 @@ async def auth_user(token:str = Depends(oauth), db:Session = Depends(get_db)):
                     user_id= user.id,
                     status_after="USER_AUTENTIFIED"
                     )    
+    auth_logger.info(f"USER:{user.name}, SUCCESSFULLY AUTH")
     return user    
 
 @router.get("/me", response_model= UserResponse)
@@ -121,7 +124,8 @@ async def make_admin(id:int ,user:User = Depends(admin_required),db:Session = De
                     user_id= current_user.id,
                     status_before="USER",
                     status_after="ADMIN"
-                    )   
+                    )
+    auth_logger.info(f"USER:{current_user.username}, NOW IS ADMIN. PROMOTED BY {user.username}")   
     db.commit()
     db.refresh(current_user)
     return (f"NOW {current_user.username} IS ADMIN , PROMOTED BY: {user.username}")
@@ -143,7 +147,8 @@ async def remove_admin(id:int, user:User = Depends(admin_required), db:Session =
                     user_id= current_user.id,
                     status_before="ADMIN",
                     status_after="USER"
-                    )   
+                    )
+    auth_logger.info(f"USER:{current_user.username}, IS NO LONGER ADMIN. ROLE REMOVED BY:{user.username}")   
     db.commit()
     db.refresh(current_user)
     return (f"NOW {current_user.username} IS NO LONGER AN ADMIN , REMOVED BY: {user.username}")
