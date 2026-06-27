@@ -10,5 +10,5 @@ class Payment(Base):
     order_id : Mapped[int] = mapped_column(Integer, ForeignKey("orders.id"))
     amount: Mapped[float] = mapped_column(Float)
     status = Column(SqlEnum(PaymentStatus), nullable=False,default=PaymentStatus.PENDING)
-    provider : Mapped[str] = mapped_column(String)
+    provider : Mapped[str] = mapped_column(String(50))
     created_at = Column(DateTime)

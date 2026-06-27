@@ -9,6 +9,6 @@ class Category(Base):
     __tablename__ = "categories"
     
     id = Column(Integer, index= True, primary_key=True)
-    name : Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    name : Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     parent_id : Mapped[int] = mapped_column(Integer, ForeignKey("categories.id"), nullable=True)
     products = relationship("Product", back_populates="category")

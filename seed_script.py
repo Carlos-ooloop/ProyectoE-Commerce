@@ -1,6 +1,13 @@
 from db.data import SessionLocal
 from models.user_model import User
 from models.category_model import Category
+from models.audit_log_model import AuditLog
+from models.inventory_model import Inventory
+from models.product_model import Product
+from models.audit_log_model import AuditAction,AuditEntity
+from models.order_item import OrderItem
+from models.order_model import Order
+from models.payment_model import Payment,PaymentStatus
 from utils.auth import hash_password
 
 def create_admin():
@@ -30,7 +37,7 @@ def create_categories():
         if existing:
             continue
         new_category = Category(name=category)
-        db.add(category)
+        db.add(new_category)
     db.commit()
     
 if __name__ == "__main__":

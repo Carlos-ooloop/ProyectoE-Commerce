@@ -11,7 +11,7 @@ def create_auditlog(db,entity_type:str,entity_id:int,action:str,user_id:int = No
                    user_id = user_id,
                    status_before =status_before,
                    status_after= status_after,
-                   metadata = metadata or {}
+                   details = metadata or {}
                    )
     db.add(log)
     

@@ -60,7 +60,7 @@ async def login(form:OAuth2PasswordRequestForm = Depends(),db:Session = Depends(
                         action=AuditAction.LOGIN_FAILED,
                         user_id= user.id,
                         status_after="USER_NOT_AUTENTIFIED",
-                        metadata={"MOTIVE":"PASSWORD ERROR"}
+                        details={"MOTIVE":"PASSWORD ERROR"}
                         )   
         password_error()
         

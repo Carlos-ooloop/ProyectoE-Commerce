@@ -14,4 +14,4 @@ class Order(Base):
     status = mapped_column(SqlEnum(OrderStatus),nullable=False, default=OrderStatus.PENDING_PAYMENT)
     total_amount = mapped_column(Float)
     user_id = mapped_column (Integer, ForeignKey("users.id"))
-    user = relationship("User", back_populates="orders")
+    users = relationship("User", back_populates="orders")

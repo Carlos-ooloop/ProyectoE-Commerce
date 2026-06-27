@@ -1,10 +1,10 @@
 from Routers import users_crud, inventory_crud, order_crud, product_crud, payments,category_crud
 from fastapi import FastAPI
 from utils import auth
-from db.data import engine
+from db.data import engine,Base
 from models.user_model import User
 
-User.metadata.create_all(bind = engine)
+Base.metadata.create_all(bind = engine)
 app = FastAPI()
 
 app.include_router(users_crud.router)

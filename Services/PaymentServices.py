@@ -4,7 +4,7 @@ from models.order_model import Order
 from models.user_model import User
 from fastapi import HTTPException
 from app.enums.order_status import OrderStatus
-from OrderServices import change_order_status
+from Services.OrderServices import change_order_status
 from app.enums.payment_status import PaymentStatus
 import random
 import time 
@@ -34,7 +34,7 @@ def handle_success(db, payment,order):
                     action=AuditAction.PAYMENT_SUCCESS,
                     status_before=PaymentStatus.PENDING,
                     status_after=PaymentStatus.SUCCESS,
-                    metadata={"order_id":order.id}
+                    details={"order_id":order.id}
                     )
     
     db.add(payment)
