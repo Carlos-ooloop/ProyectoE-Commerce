@@ -26,4 +26,4 @@ class AuditEntity(str,Enum):
     PAYMENT ="PAYMENT"
     INVENTORY = "INVENTORY"
     CATEGORY = "CATEGORY" 
-    PRODCUT = "PRODUCT"   
+    PRODUCT = "PRODUCT"   

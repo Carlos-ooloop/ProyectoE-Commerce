@@ -10,7 +10,7 @@ from app.enums.order_status import OrderStatus
 from app.core.AuditService import create_auditlog
 from app.enums.audit_types import AuditEntity, AuditAction
 from app.core.logging import order_logger
-
+from datetime import datetime
 ALLOWED_TRANSITIONS = {OrderStatus.PENDING_PAYMENT : {OrderStatus.PAID,OrderStatus.CANCELLED},
                        OrderStatus.PAID : {OrderStatus.SHIPPED},
                        OrderStatus.DELIVERED:set(),
@@ -40,7 +40,7 @@ def change_order_status(db:Session, order:Order, new_status:OrderStatus):
 
 def create_order_service(db:Session, order_data : OrderCreate, user:User):
     
-    order = Order(user_id = user.id,status="PENDING", total_amount = 0)
+    order = Order(user_id = user.id,status=OrderStatus.PENDING_PAYMENT, total_amount = 0)
     db.add(order)
     db.flush()
 
@@ -83,4 +83,4 @@ def create_order_service(db:Session, order_data : OrderCreate, user:User):
         db.rollback()
         raise HTTPException(status_code=500,detail="ERROR CREATING ORDER")
     order_logger.info(f"ORDER CREATED BY: {user.username}")
-    return order        
+    return order      

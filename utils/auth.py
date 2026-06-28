@@ -81,7 +81,7 @@ async def auth_user(token:str = Depends(oauth), db:Session = Depends(get_db)):
             raise HTTPException(status_code=401, detail="THIS CREDENTIALS HAS NO VALUE")
              
     except JWTError:
-            auth_logger.warning(f"USER:{username}, FAILED TO AUTH")     
+                
             raise HTTPException(status_code=401, detail="THIS CREDENTIALS HAS NO VALUE")
     user = db.query(User).filter(User.username == username).first()
     if not user:
@@ -93,7 +93,7 @@ async def auth_user(token:str = Depends(oauth), db:Session = Depends(get_db)):
                     user_id= user.id,
                     status_after="USER_AUTENTIFIED"
                     )    
-    auth_logger.info(f"USER:{user.name}, SUCCESSFULLY AUTH")
+    auth_logger.info(f"USER:{user.username}, SUCCESSFULLY AUTH")
     return user    
 
 @router.get("/me", response_model= UserResponse)

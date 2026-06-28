@@ -12,14 +12,14 @@ from models.inventory_model import Inventory
 from app.core.AuditService import create_auditlog
 from app.enums.audit_types import AuditAction, AuditEntity
 from app.core.logging import payment_logger
-
+from schemas.orders import OrderCreate,OrderItemCreate
 
 def fake_payment_provider(payment)->str:
     time.sleep(0.5)
     
     outcome = random.choices(population=["SUCCESS", "FAILED"], weights=[0.8,0.2], k=1)[0]
     
-    return random
+    return outcome
 
 
     
@@ -33,8 +33,8 @@ def handle_success(db, payment,order):
                     entity_id=payment.id,
                     action=AuditAction.PAYMENT_SUCCESS,
                     status_before=PaymentStatus.PENDING,
-                    status_after=PaymentStatus.SUCCESS,
-                    details={"order_id":order.id}
+                    status_after=PaymentStatus.SUCCESS
+                  
                     )
     
     db.add(payment)
@@ -57,7 +57,7 @@ def handle_failed(db,payment,order):
                     entity_id=payment.id,
                     action=AuditAction.PAYMENT_FAILED,
                     status_before=PaymentStatus.PENDING,
-                    status_after=PaymentStatus.FAILED,
+                    status_after=PaymentStatus.FAILED
                     )
     db.commit()
     db.refresh(payment)
@@ -80,7 +80,10 @@ def process_payment(db:Session, order_id:int,client_money:float, user:User):
                       order_id = order.id,
                       amount = order.total_amount,
                       status = PaymentStatus.PENDING,
+                      provider = "PayPal"
                       )
+    db.add(payment)
+    db.flush()
     create_auditlog(db=db,
                     entity_type=AuditEntity.PAYMENT,
                     entity_id=payment.id,
@@ -88,12 +91,11 @@ def process_payment(db:Session, order_id:int,client_money:float, user:User):
                     user_id= user.id,
                     status_after=PaymentStatus.PENDING
                     )
-    db.add(payment)
-    db.flush()
+
     result = fake_payment_provider(payment=payment)
     if result == "SUCCESS":
         payment_logger.info(f"PAYMENT OF USER`S ORDER: {user.username}, SUCCESSFULLY MADE")
         return handle_success(db=db, payment=payment, order=order)
-    payment.logger(f"FAILED TO MAKE THE PAYMENT OF USER`S ORDER: {user.username}")    
+    payment_logger.info(f"FAILED TO MAKE THE PAYMENT OF USER`S ORDER: {user.username}")    
     return handle_failed(db=db,payment=payment,order=order)
     

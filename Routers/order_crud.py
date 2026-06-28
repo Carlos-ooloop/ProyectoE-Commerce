@@ -18,7 +18,7 @@ async def create_order(order_data:OrderCreate, db:Session = Depends(get_db), cur
    return create_order_service(db,order_data,current_user)
 
 @router.get("/")
-async def get_orders(id:int, db:Session = Depends(get_db)):
+async def get_orders( db:Session = Depends(get_db)):
    orders = db.query(Order).all()
    return orders
 

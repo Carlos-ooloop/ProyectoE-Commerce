@@ -12,3 +12,4 @@ class OrderItem(Base):
     product_id = mapped_column(Integer, ForeignKey("products.id"))
     quantity = mapped_column(Integer)
     unit_price = mapped_column(Float)
+    order = relationship("Order", back_populates= "items")
