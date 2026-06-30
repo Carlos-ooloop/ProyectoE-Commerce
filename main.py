@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from utils import auth
 from db.data import engine,Base
 from models.user_model import User
+from dotenv import load_dotenv
+
+load_dotenv()
 
 Base.metadata.create_all(bind = engine)
 app = FastAPI()
